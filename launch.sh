@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Usage: ./launch.sh <mode> <model_size> [steps] [nodes]
+# Usage: ./launch.sh <mode> <model_size> [steps] [nodes] [options]
 #
 # Modes:     throughput  (50 steps, with W&B)
 #            train       (N steps, with W&B and Tensorboard)
@@ -10,42 +10,80 @@
 # Steps:     required for train mode (e.g., 1000, 5000, 15000)
 # Nodes:     optional, default 4 (max 8)
 #
+# Options (can appear in any order after mode and model_size):
+#   --lr-schedule <cosine|WSD|constant>   LR schedule (default: cosine for train, constant for throughput)
+#   --wsd-decay-pct <int>                 % of training steps used for WSD decay phase (default: 30)
+#   --gbs <N>                             Override global batch size (default: 256)
+#
 # Examples:  ./launch.sh throughput 760m
 #            ./launch.sh throughput 8b 50 1
-#            ./launch.sh train 760m 5000
-#            ./launch.sh train 1.5b 3000 8
+#            ./launch.sh train 760m 2000 1
+#            ./launch.sh train 760m 2000 1 --lr-schedule cosine
+#            ./launch.sh train 760m 2000 1 --lr-schedule WSD --wsd-decay-pct 30
+#            ./launch.sh train 760m 2000 1 --lr-schedule WSD --wsd-decay-pct 20
 
 set -euo pipefail
 
 source "$(dirname "$0")/config.sh"
 
-MODE=${1:?Usage: ./launch.sh <mode> <model_size> [steps] [nodes]}
-MODEL_SIZE=${2:?Usage: ./launch.sh <mode> <model_size> [steps] [nodes]}
+MODE=${1:?Usage: ./launch.sh <mode> <model_size> [steps] [nodes] [options]}
+MODEL_SIZE=${2:?Usage: ./launch.sh <mode> <model_size> [steps] [nodes] [options]}
+shift 2
+
+################ Parse remaining args ################
+LR_SCHEDULE=""        # empty = use mode default (cosine for train, constant for throughput)
+WSD_DECAY_PCT=30      # % of total steps used for the WSD decay phase
+GBS_OVERRIDE=""
+MBS_OVERRIDE=""
+DRY_RUN=false
+
+_POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --lr-schedule)    LR_SCHEDULE="${2:?--lr-schedule requires cosine|WSD|constant}"; shift 2;;
+        --wsd-decay-pct)  WSD_DECAY_PCT="${2:?--wsd-decay-pct requires an integer}"; shift 2;;
+        --gbs)            GBS_OVERRIDE="${2:?--gbs requires N}"; shift 2;;
+        --mbs)            MBS_OVERRIDE="${2:?--mbs requires N}"; shift 2;;
+        --dry-run)        DRY_RUN=true; shift;;
+        -*)               echo "Unknown option: $1"; exit 1;;
+        *)                _POSITIONAL+=("$1"); shift;;
+    esac
+done
 
 ################ Mode config ################
 case $MODE in
     throughput)
-        TRAINING_STEPS=${3:-50}
-        NODES=${4:-4}
-        TIME=00:30:00
+        TRAINING_STEPS=${_POSITIONAL[0]:-50}
+        NODES=${_POSITIONAL[1]:-4}
+        TIME=01:00:00   # 1h: generous for large models (3b ~39 min, others <15 min)
         EVAL_INTERVAL=$TRAINING_STEPS
         EVAL_ITERS=0
         LR_WARMUP_ITERS=10
         LOGGING_EXTRA=""
         WANDB=true
+        [[ -z "$LR_SCHEDULE" ]] && LR_SCHEDULE="constant"
+        CHECKPOINT_EXTRA=""   # no checkpointing for 50-step throughput runs
         ;;
     train)
-        TRAINING_STEPS=${3:?Usage: ./launch.sh train <model_size> <steps> [nodes]}
-        NODES=${4:-4}
+        TRAINING_STEPS=${_POSITIONAL[0]:?Usage: ./launch.sh train <model_size> <steps> [nodes]}
+        NODES=${_POSITIONAL[1]:-4}
+        # Time budget: 760m does ~13s/step on 1 node, ~3.3s/step on 4 nodes.
+        # 500 steps @1n ~2h, 500 steps @4n ~30min. 2:30:00 covers both cases.
         TIME=02:30:00
-        EVAL_INTERVAL=1000
+        EVAL_INTERVAL=50
         EVAL_ITERS=10
-        LR_WARMUP_ITERS=200
+        LR_WARMUP_ITERS=100
         LOGGING_EXTRA="
     --tensorboard-dir \$TENSORBOARD_DIR
     --log-timers-to-tensorboard
     --log-memory-to-tensorboard"
+        # Checkpoint every 100 steps so a failed job can resume from last save
+        CHECKPOINT_EXTRA="
+    --save \$CHECKPOINT_DIR
+    --save-interval 100
+    --load \$CHECKPOINT_DIR"
         WANDB=true
+        [[ -z "$LR_SCHEDULE" ]] && LR_SCHEDULE="cosine"
         ;;
     *)
         echo "Unknown mode: $MODE. Choose: throughput, train"
@@ -85,9 +123,15 @@ case $MODEL_SIZE in
         ;;
 esac
 
-GBS=256
+GBS=${GBS_OVERRIDE:-256}
+[[ -n "$MBS_OVERRIDE" ]] && MBS="$MBS_OVERRIDE"
 SEQ_LEN=4096
-JOB_NAME="gipfel-${MODE}-${MODEL_SIZE}-${TRAINING_STEPS}s-${NODES}n"
+if [[ "$LR_SCHEDULE" == "WSD" ]]; then
+    LR_TAG="WSD${WSD_DECAY_PCT}"
+else
+    LR_TAG="${LR_SCHEDULE}"
+fi
+JOB_NAME="gipfel-${MODE}-${MODEL_SIZE}-${TRAINING_STEPS}s-${NODES}n-${LR_TAG}-gbs${GBS}-mbs${MBS}"
 
 ################ W&B block ################
 if [ "$WANDB" = true ]; then
@@ -154,16 +198,17 @@ TRAINING_STEPS=${TRAINING_STEPS}
 
 # Logging
 PROJECT_NAME=gipfelsturm
-EXP_NAME=${MODE}-${MODEL_SIZE}-\${SLURM_NNODES}n
+EXP_NAME=${JOB_NAME}
 LOG_DIR=/iopsstor/scratch/cscs/\$USER/gipfelsturm/\$PROJECT_NAME/\$EXP_NAME
 TENSORBOARD_DIR=\$LOG_DIR/tensorboard
+CHECKPOINT_DIR=/iopsstor/scratch/cscs/\$USER/gipfelsturm/checkpoints/\$EXP_NAME
 CONFIGS
 
 cat >> "$SCRIPT" << 'SETUP'
 
 #########################################
 
-mkdir -p logs $LOG_DIR $TENSORBOARD_DIR $DATASET_CACHE_DIR
+mkdir -p logs $LOG_DIR $TENSORBOARD_DIR $DATASET_CACHE_DIR $CHECKPOINT_DIR
 
 cd $MEGATRON_LM_DIR
 flock $MEGATRON_LM_DIR/.git-lock bash -c "cd $MEGATRON_LM_DIR && git checkout -- . && git apply $WORKDIR/patches/*.patch"
@@ -231,8 +276,17 @@ REGULARIZATION_ARGS=(
 
 LEARNING_RATE_ARGS=(
     --lr 3e-4
-    --lr-decay-style constant
+    --min-lr 3e-5
     --lr-warmup-iters ${LR_WARMUP_ITERS}
+    --lr-decay-style ${LR_SCHEDULE}
+$(if [[ "${LR_SCHEDULE}" == "cosine" ]]; then
+    echo "    --lr-decay-iters ${TRAINING_STEPS}"
+elif [[ "${LR_SCHEDULE}" == "WSD" ]]; then
+    WSD_DECAY_ITERS=$(( TRAINING_STEPS * WSD_DECAY_PCT / 100 ))
+    echo "    --lr-decay-iters ${TRAINING_STEPS}"
+    echo "    --lr-wsd-decay-iters ${WSD_DECAY_ITERS}"
+    echo "    --lr-wsd-decay-style cosine"
+fi)
 )
 TRAINING
 
@@ -262,6 +316,7 @@ REST
 
 cat >> "$SCRIPT" << LOGGING_EXTRA
 ${LOGGING_EXTRA}
+${CHECKPOINT_EXTRA}
 )
 LOGGING_EXTRA
 
@@ -324,4 +379,9 @@ FOOTER
 chmod +x "$SCRIPT"
 
 echo "Generated: $SCRIPT"
-sbatch "$SCRIPT"
+if [[ "$DRY_RUN" == "true" ]]; then
+    echo "DRY RUN — not submitted. To submit:"
+    echo "  sbatch $SCRIPT"
+else
+    sbatch "$SCRIPT"
+fi

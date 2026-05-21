@@ -119,14 +119,19 @@ run_batchsize() {
     echo "═══════════════════════════════════════════════════════"
     echo ""
 
-    # Same step count = same wall-clock time, different tokens per step
-    for gbs in 128 256 512; do
+    # GBS=256 cosine is already submitted as part of the LR ablation (cosine baseline).
+    # Only submit GBS=128 and GBS=512 here — analyze.py uses the cosine lr run for GBS=256.
+    for gbs in 128 512; do
         submit batchsize "760m-gbs${gbs}-${steps}s" \
-            train 760m "$steps" 1 --gbs "$gbs" --lr-schedule cosine
+            batchsize 760m "$steps" 1 --gbs "$gbs" --lr-schedule cosine
     done
 
     echo ""
     echo "Batch size convergence jobs submitted. Job log: $JOB_LOG"
+    echo ""
+    echo "Note: GBS=256 is shared with the LR ablation cosine run — no duplicate needed."
+    echo "After jobs complete, run:"
+    echo "  python3 analyze.py --group batchsize"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

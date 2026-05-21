@@ -64,7 +64,7 @@ case $MODE in
         [[ -z "$LR_SCHEDULE" ]] && LR_SCHEDULE="constant"
         CHECKPOINT_EXTRA=""   # no checkpointing for 50-step throughput runs
         ;;
-    train)
+    train|batchsize)
         TRAINING_STEPS=${_POSITIONAL[0]:?Usage: ./launch.sh train <model_size> <steps> [nodes]}
         NODES=${_POSITIONAL[1]:-4}
         # Time budget: 760m does ~13s/step on 1 node, ~3.3s/step on 4 nodes.
@@ -86,7 +86,7 @@ case $MODE in
         [[ -z "$LR_SCHEDULE" ]] && LR_SCHEDULE="cosine"
         ;;
     *)
-        echo "Unknown mode: $MODE. Choose: throughput, train"
+        echo "Unknown mode: $MODE. Choose: throughput, train, batchsize"
         exit 1
         ;;
 esac

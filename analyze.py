@@ -236,8 +236,24 @@ def print_lr_table(runs):
     print("─" * 58)
 
 
+def _batchsize_runs(all_runs):
+    """
+    Collect all runs relevant to the batch size comparison:
+      - group=batchsize (GBS=128, GBS=512 dedicated jobs)
+      - the cosine LR ablation run at GBS=256 (shared, avoids a duplicate job)
+    """
+    runs = [r for r in all_runs if r.group == "batchsize"]
+    has_gbs256 = any("gbs256" in r.job_name for r in runs)
+    if not has_gbs256:
+        for r in all_runs:
+            if r.group == "lr" and "cosine" in r.job_name.lower() and "gbs256" in r.job_name:
+                runs.append(r)
+                break
+    return runs
+
+
 def print_batchsize_table(runs):
-    bs = [r for r in runs if r.group == "batchsize"]
+    bs = _batchsize_runs(runs)
     if not bs:
         return
 
@@ -417,8 +433,7 @@ def plot_batchsize(runs, out, plt):
         m = re.search(r"gbs(\d+)", r.job_name)
         return int(m.group(1)) if m else 0
 
-    bs_runs = sorted([r for r in runs if r.group == "batchsize" and r.val_loss],
-                     key=_gbs)
+    bs_runs = sorted([r for r in _batchsize_runs(runs) if r.val_loss], key=_gbs)
     if not bs_runs:
         return
     fig, ax = plt.subplots(figsize=(8, 5))

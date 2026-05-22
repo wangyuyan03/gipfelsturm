@@ -55,7 +55,7 @@ case $MODE in
     throughput)
         TRAINING_STEPS=${_POSITIONAL[0]:-50}
         NODES=${_POSITIONAL[1]:-4}
-        TIME=01:00:00   # 1h: generous for large models (3b ~39 min, others <15 min)
+        TIME=00:20:00   # default; overridden per model size below after MODEL_SIZE case
         EVAL_INTERVAL=$TRAINING_STEPS
         EVAL_ITERS=0
         LR_WARMUP_ITERS=10
@@ -126,6 +126,22 @@ esac
 GBS=${GBS_OVERRIDE:-256}
 [[ -n "$MBS_OVERRIDE" ]] && MBS="$MBS_OVERRIDE"
 SEQ_LEN=4096
+
+# For throughput mode, set a tight time limit per model size.
+# Estimates: startup+JIT ~10 min, then 50 steps of training.
+# 125m/350m/760m: ~5-11 min training → 25 min total
+# 1.5b:           ~20 min training  → 35 min total
+# 3b:             ~39 min training  → 55 min total
+# 8b:             ~60 min training  → 75 min total (keep 1h30)
+# Multi-node jobs finish faster per wall-clock but keep same limit for safety.
+if [[ "$MODE" == "throughput" ]]; then
+    case $MODEL_SIZE in
+        125m|350m|760m) TIME=00:25:00 ;;
+        1.5b)           TIME=00:35:00 ;;
+        3b)             TIME=00:55:00 ;;
+        8b)             TIME=01:30:00 ;;
+    esac
+fi
 if [[ "$LR_SCHEDULE" == "WSD" ]]; then
     LR_TAG="WSD${WSD_DECAY_PCT}"
 else

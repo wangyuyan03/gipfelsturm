@@ -11,3 +11,7 @@ results/plots/
 
 # Keep the job submission log (shared state for the team)
 !results/job_ids.log
+
+cache/
+*.log
+*.npy

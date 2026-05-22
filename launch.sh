@@ -208,6 +208,11 @@ cat >> "$SCRIPT" << 'SETUP'
 
 #########################################
 
+# Strip user conda/miniconda from PATH so the container's Python and torchrun
+# are used instead of the submitting shell's conda environment.
+export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v -E '(conda|miniconda)' | tr '\n' ':' | sed 's/:$//')
+unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_EXE CONDA_PYTHON_EXE
+
 mkdir -p logs $LOG_DIR $TENSORBOARD_DIR $DATASET_CACHE_DIR $CHECKPOINT_DIR
 
 cd $MEGATRON_LM_DIR

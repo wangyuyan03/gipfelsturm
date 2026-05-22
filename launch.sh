@@ -127,18 +127,18 @@ GBS=${GBS_OVERRIDE:-256}
 [[ -n "$MBS_OVERRIDE" ]] && MBS="$MBS_OVERRIDE"
 SEQ_LEN=4096
 
-# For throughput mode, set a tight time limit per model size.
+# For throughput mode, set time limits per model size.
 # Estimates: startup+JIT ~10 min, then 50 steps of training.
-# 125m/350m/760m: ~5-11 min training → 25 min total
-# 1.5b:           ~20 min training  → 35 min total
-# 3b:             ~39 min training  → 55 min total
-# 8b:             ~60 min training  → 75 min total (keep 1h30)
+# 125m/350m/760m: ~5-11 min training → 30 min total  (+15 min buffer)
+# 1.5b:           ~20 min training  → 45 min total  (+15 min buffer)
+# 3b:             ~39 min training  → 70 min total  (+20 min buffer)
+# 8b:             ~60 min training  → 90 min total  (+20 min buffer)
 # Multi-node jobs finish faster per wall-clock but keep same limit for safety.
 if [[ "$MODE" == "throughput" ]]; then
     case $MODEL_SIZE in
-        125m|350m|760m) TIME=00:25:00 ;;
-        1.5b)           TIME=00:35:00 ;;
-        3b)             TIME=00:55:00 ;;
+        125m|350m|760m) TIME=00:30:00 ;;
+        1.5b)           TIME=00:45:00 ;;
+        3b)             TIME=01:10:00 ;;
         8b)             TIME=01:30:00 ;;
     esac
 fi

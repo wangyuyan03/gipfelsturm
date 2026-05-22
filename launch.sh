@@ -35,6 +35,7 @@ LR_SCHEDULE=""        # empty = use mode default (cosine for train, constant for
 WSD_DECAY_PCT=30      # % of total steps used for the WSD decay phase
 GBS_OVERRIDE=""
 MBS_OVERRIDE=""
+TIME_OVERRIDE=""
 DRY_RUN=false
 
 _POSITIONAL=()
@@ -44,6 +45,7 @@ while [[ $# -gt 0 ]]; do
         --wsd-decay-pct)  WSD_DECAY_PCT="${2:?--wsd-decay-pct requires an integer}"; shift 2;;
         --gbs)            GBS_OVERRIDE="${2:?--gbs requires N}"; shift 2;;
         --mbs)            MBS_OVERRIDE="${2:?--mbs requires N}"; shift 2;;
+        --time)           TIME_OVERRIDE="${2:?--time requires HH:MM:SS}"; shift 2;;
         --dry-run)        DRY_RUN=true; shift;;
         -*)               echo "Unknown option: $1"; exit 1;;
         *)                _POSITIONAL+=("$1"); shift;;
@@ -138,6 +140,8 @@ if [[ "$MODE" == "throughput" ]]; then
         8b)             TIME=01:30:00 ;;
     esac
 fi
+[[ -n "$TIME_OVERRIDE" ]] && TIME="$TIME_OVERRIDE"
+
 if [[ "$LR_SCHEDULE" == "WSD" ]]; then
     LR_TAG="WSD${WSD_DECAY_PCT}"
 else

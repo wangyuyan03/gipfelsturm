@@ -1,0 +1,344 @@
+; ModuleID = 'LLVMDialectModule'
+source_filename = "LLVMDialectModule"
+target datalayout = "e-p3:32:32-p4:32:32-p5:32:32-p6:32:32-p7:32:32-i64:64-i128:128-i256:256-v16:16-v32:32-n16:32:64"
+
+@global_smem = external local_unnamed_addr addrspace(3) global [0 x i8], align 16
+
+; Function Attrs: nounwind
+define ptx_kernel void @triton_poi_fused_add_native_dropout_0(ptr addrspace(1) %0, ptr addrspace(1) %1, ptr addrspace(1) %2, ptr addrspace(1) %3, ptr addrspace(1) %4, ptr addrspace(1) %5, i32 %6, i32 %7, ptr addrspace(1) readnone captures(none) %8, ptr addrspace(1) readnone captures(none) %9) local_unnamed_addr #0 !dbg !5 {
+  %11 = tail call i32 @llvm.nvvm.read.ptx.sreg.ctaid.x(), !dbg !8
+  %12 = shl i32 %11, 9, !dbg !9
+  %13 = tail call i32 @llvm.nvvm.read.ptx.sreg.tid.x(), !dbg !10
+  %14 = and i32 %13, 255, !dbg !10
+  %15 = shl nuw nsw i32 %14, 1, !dbg !10
+  %16 = or disjoint i32 %15, %12, !dbg !11
+  %17 = or disjoint i32 %12, %14, !dbg !11
+  %18 = or disjoint i32 %17, 256, !dbg !11
+  %19 = sdiv i32 %16, 1600, !dbg !12
+  %20 = mul i32 %19, 1600, !dbg !13
+  %.decomposed = sub i32 %16, %20, !dbg !13
+  %21 = sext i32 %16 to i64, !dbg !14
+  %22 = getelementptr bfloat, ptr addrspace(1) %1, i64 %21, !dbg !14
+  %23 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09ld.global.b32 { $0 }, [ $1 + 0 ];", "=r,l"(ptr addrspace(1) %22) #3, !dbg !15
+  %24 = bitcast i32 %23 to <2 x bfloat>, !dbg !15
+  %25 = getelementptr bfloat, ptr addrspace(1) %2, i64 %21, !dbg !16
+  %26 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09ld.global.b32 { $0 }, [ $1 + 0 ];", "=r,l"(ptr addrspace(1) %25) #3, !dbg !17
+  %27 = bitcast i32 %26 to <2 x bfloat>, !dbg !17
+  %28 = sext i32 %.decomposed to i64, !dbg !18
+  %29 = getelementptr bfloat, ptr addrspace(1) %3, i64 %28, !dbg !18
+  %30 = tail call i64 asm sideeffect "mov.u64 $0, 0x0;\0A\09createpolicy.fractional.L2::evict_last.b64 $0, 1.0;", "=l"() #3, !dbg !19
+  %31 = tail call i32 asm sideeffect "mov.u32 $0, 0x0;\0A\09ld.global.L1::evict_last.L2::cache_hint.b32 { $0 }, [ $1 + 0 ], $2;", "=r,l,l"(ptr addrspace(1) %29, i64 %30) #3, !dbg !19
+  %32 = bitcast i32 %31 to <2 x bfloat>, !dbg !19
+  %33 = sext i32 %6 to i64, !dbg !20
+  %34 = getelementptr i64, ptr addrspace(1) %0, i64 %33, !dbg !20
+  %35 = tail call i64 asm sideeffect "mov.u64 $0, 0x0;\0A\09ld.global.b64 { $0 }, [ $1 + 0 ];", "=l,l"(ptr addrspace(1) %34) #3, !dbg !21
+  %36 = lshr i64 %35, 32, !dbg !22
+  %37 = trunc nuw i64 %36 to i32, !dbg !30
+  %38 = trunc i64 %35 to i32, !dbg !31
+  %39 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 0), !dbg !32
+  %40 = xor i32 %39, %38, !dbg !34
+  %41 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %17), !dbg !35
+  %42 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %18), !dbg !35
+  %43 = xor i32 %41, %37, !dbg !36
+  %44 = xor i32 %42, %37, !dbg !36
+  %45 = mul i32 %17, -766435501, !dbg !37
+  %46 = mul i32 %18, -766435501, !dbg !37
+  %47 = add i32 %38, -1640531527, !dbg !38
+  %48 = add i32 %37, -1150833019, !dbg !39
+  %49 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %43), !dbg !32
+  %50 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %44), !dbg !32
+  %51 = xor i32 %49, %47, !dbg !34
+  %52 = xor i32 %50, %47, !dbg !34
+  %53 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %40), !dbg !35
+  %54 = xor i32 %53, %45, !dbg !36
+  %55 = xor i32 %54, %48, !dbg !36
+  %56 = xor i32 %53, %46, !dbg !36
+  %57 = xor i32 %56, %48, !dbg !36
+  %58 = mul i32 %43, -845247145, !dbg !40
+  %59 = mul i32 %44, -845247145, !dbg !40
+  %60 = mul i32 %40, -766435501, !dbg !37
+  %61 = add i32 %38, 1013904242, !dbg !38
+  %62 = add i32 %37, 1993301258, !dbg !39
+  %63 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %55), !dbg !32
+  %64 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %57), !dbg !32
+  %65 = xor i32 %58, %63, !dbg !34
+  %66 = xor i32 %65, %61, !dbg !34
+  %67 = xor i32 %59, %64, !dbg !34
+  %68 = xor i32 %67, %61, !dbg !34
+  %69 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %51), !dbg !35
+  %70 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %52), !dbg !35
+  %71 = xor i32 %60, %69, !dbg !36
+  %72 = xor i32 %71, %62, !dbg !36
+  %73 = xor i32 %60, %70, !dbg !36
+  %74 = xor i32 %73, %62, !dbg !36
+  %75 = mul i32 %55, -845247145, !dbg !40
+  %76 = mul i32 %57, -845247145, !dbg !40
+  %77 = mul i32 %51, -766435501, !dbg !37
+  %78 = mul i32 %52, -766435501, !dbg !37
+  %79 = add i32 %38, -626627285, !dbg !38
+  %80 = add i32 %37, 842468239, !dbg !39
+  %81 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %72), !dbg !32
+  %82 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %74), !dbg !32
+  %83 = xor i32 %75, %81, !dbg !34
+  %84 = xor i32 %83, %79, !dbg !34
+  %85 = xor i32 %76, %82, !dbg !34
+  %86 = xor i32 %85, %79, !dbg !34
+  %87 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %66), !dbg !35
+  %88 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %68), !dbg !35
+  %89 = xor i32 %77, %87, !dbg !36
+  %90 = xor i32 %89, %80, !dbg !36
+  %91 = xor i32 %78, %88, !dbg !36
+  %92 = xor i32 %91, %80, !dbg !36
+  %93 = mul i32 %72, -845247145, !dbg !40
+  %94 = mul i32 %74, -845247145, !dbg !40
+  %95 = mul i32 %66, -766435501, !dbg !37
+  %96 = mul i32 %68, -766435501, !dbg !37
+  %97 = add i32 %38, 2027808484, !dbg !38
+  %98 = add i32 %37, -308364780, !dbg !39
+  %99 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %90), !dbg !32
+  %100 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %92), !dbg !32
+  %101 = xor i32 %93, %99, !dbg !34
+  %102 = xor i32 %101, %97, !dbg !34
+  %103 = xor i32 %94, %100, !dbg !34
+  %104 = xor i32 %103, %97, !dbg !34
+  %105 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %84), !dbg !35
+  %106 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %86), !dbg !35
+  %107 = xor i32 %95, %105, !dbg !36
+  %108 = xor i32 %107, %98, !dbg !36
+  %109 = xor i32 %96, %106, !dbg !36
+  %110 = xor i32 %109, %98, !dbg !36
+  %111 = mul i32 %90, -845247145, !dbg !40
+  %112 = mul i32 %92, -845247145, !dbg !40
+  %113 = mul i32 %84, -766435501, !dbg !37
+  %114 = mul i32 %86, -766435501, !dbg !37
+  %115 = add i32 %38, 387276957, !dbg !38
+  %116 = add i32 %37, -1459197799, !dbg !39
+  %117 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %108), !dbg !32
+  %118 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %110), !dbg !32
+  %119 = xor i32 %111, %117, !dbg !34
+  %120 = xor i32 %119, %115, !dbg !34
+  %121 = xor i32 %112, %118, !dbg !34
+  %122 = xor i32 %121, %115, !dbg !34
+  %123 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %102), !dbg !35
+  %124 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %104), !dbg !35
+  %125 = xor i32 %113, %123, !dbg !36
+  %126 = xor i32 %125, %116, !dbg !36
+  %127 = xor i32 %114, %124, !dbg !36
+  %128 = xor i32 %127, %116, !dbg !36
+  %129 = mul i32 %108, -845247145, !dbg !40
+  %130 = mul i32 %110, -845247145, !dbg !40
+  %131 = mul i32 %102, -766435501, !dbg !37
+  %132 = mul i32 %104, -766435501, !dbg !37
+  %133 = add i32 %38, -1253254570, !dbg !38
+  %134 = add i32 %37, 1684936478, !dbg !39
+  %135 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %126), !dbg !32
+  %136 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %128), !dbg !32
+  %137 = xor i32 %129, %135, !dbg !34
+  %138 = xor i32 %137, %133, !dbg !34
+  %139 = xor i32 %130, %136, !dbg !34
+  %140 = xor i32 %139, %133, !dbg !34
+  %141 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %120), !dbg !35
+  %142 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %122), !dbg !35
+  %143 = xor i32 %131, %141, !dbg !36
+  %144 = xor i32 %143, %134, !dbg !36
+  %145 = xor i32 %132, %142, !dbg !36
+  %146 = xor i32 %145, %134, !dbg !36
+  %147 = mul i32 %126, -845247145, !dbg !40
+  %148 = mul i32 %128, -845247145, !dbg !40
+  %149 = mul i32 %120, -766435501, !dbg !37
+  %150 = mul i32 %122, -766435501, !dbg !37
+  %151 = add i32 %38, 1401181199, !dbg !38
+  %152 = add i32 %37, 534103459, !dbg !39
+  %153 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %144), !dbg !32
+  %154 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %146), !dbg !32
+  %155 = xor i32 %147, %153, !dbg !34
+  %156 = xor i32 %155, %151, !dbg !34
+  %157 = xor i32 %148, %154, !dbg !34
+  %158 = xor i32 %157, %151, !dbg !34
+  %159 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %138), !dbg !35
+  %160 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %140), !dbg !35
+  %161 = mul i32 %138, -766435501, !dbg !37
+  %162 = mul i32 %140, -766435501, !dbg !37
+  %163 = add i32 %37, -616729560, !dbg !39
+  %164 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %156), !dbg !35
+  %165 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -766435501, i32 %158), !dbg !35
+  %166 = xor i32 %161, %164, !dbg !36
+  %167 = xor i32 %166, %163, !dbg !36
+  %168 = xor i32 %162, %165, !dbg !36
+  %169 = xor i32 %168, %163, !dbg !36
+  %170 = add i32 %38, -1879881855, !dbg !38
+  %171 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %167), !dbg !32
+  %172 = tail call i32 @llvm.nvvm.mulhi.ui(i32 -845247145, i32 %169), !dbg !32
+  %173 = shl nuw nsw i32 %13, 1, !dbg !41
+  %174 = and i32 %173, 508, !dbg !41
+  %175 = and i32 %13, 1, !dbg !41
+  %176 = icmp eq i32 %175, 0, !dbg !41
+  %177 = select i1 %176, i32 0, i32 1088, !dbg !41
+  %178 = xor i32 %177, %174, !dbg !41
+  %179 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %178, !dbg !41
+  %180 = getelementptr inbounds nuw i8, ptr addrspace(3) %179, i32 512, !dbg !41
+  %181 = shl nuw nsw i32 %14, 2, !dbg !41
+  %182 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %181, !dbg !41
+  %183 = xor i32 %181, 1088, !dbg !41
+  %184 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %183, !dbg !41
+  %185 = mul i32 %19, 1664, !dbg !42
+  %186 = add i32 %185, %.decomposed, !dbg !43
+  %187 = sext i32 %186 to i64, !dbg !44
+  %188 = getelementptr i1, ptr addrspace(1) %4, i64 %187, !dbg !44
+  %189 = insertelement <2 x i32> poison, i32 %149, i64 0, !dbg !36
+  %190 = insertelement <2 x i32> %189, i32 %150, i64 1, !dbg !36
+  %191 = insertelement <2 x i32> poison, i32 %159, i64 0, !dbg !36
+  %192 = insertelement <2 x i32> %191, i32 %160, i64 1, !dbg !36
+  %193 = xor <2 x i32> %190, %192, !dbg !36
+  %194 = insertelement <2 x i32> poison, i32 %152, i64 0, !dbg !36
+  %195 = shufflevector <2 x i32> %194, <2 x i32> poison, <2 x i32> zeroinitializer, !dbg !36
+  %196 = xor <2 x i32> %193, %195, !dbg !36
+  %197 = mul <2 x i32> %196, splat (i32 -845247145), !dbg !40
+  %198 = insertelement <2 x i32> poison, i32 %171, i64 0, !dbg !34
+  %199 = insertelement <2 x i32> %198, i32 %172, i64 1, !dbg !34
+  %200 = xor <2 x i32> %197, %199, !dbg !34
+  %201 = insertelement <2 x i32> poison, i32 %170, i64 0, !dbg !34
+  %202 = shufflevector <2 x i32> %201, <2 x i32> poison, <2 x i32> zeroinitializer, !dbg !34
+  %203 = xor <2 x i32> %200, %202, !dbg !34
+  %204 = ashr <2 x i32> %203, splat (i32 31), !dbg !45
+  %205 = xor <2 x i32> %204, %203, !dbg !45
+  %206 = sitofp <2 x i32> %205 to <2 x float>, !dbg !47
+  %207 = fmul <2 x float> %206, splat (float 0x3DFFFFFFE0000000), !dbg !47
+  %208 = fcmp ogt <2 x float> %207, splat (float 0x3FB99999A0000000), !dbg !48
+  %209 = extractelement <2 x i1> %208, i64 0, !dbg !41
+  %210 = uitofp i1 %209 to float, !dbg !41
+  %211 = extractelement <2 x i1> %208, i64 1, !dbg !41
+  %212 = uitofp i1 %211 to float, !dbg !41
+  store float %210, ptr addrspace(3) %179, align 4, !dbg !41
+  store float %212, ptr addrspace(3) %180, align 4, !dbg !41
+  tail call void @llvm.nvvm.barrier.cta.sync.aligned.all(i32 0), !dbg !41
+  %213 = load float, ptr addrspace(3) %182, align 4, !dbg !41
+  %214 = load float, ptr addrspace(3) %184, align 4, !dbg !41
+  tail call void @llvm.nvvm.barrier.cta.sync.aligned.all(i32 0), !dbg !49
+  %215 = and i32 %173, 124, !dbg !49
+  %216 = select i1 %176, i32 0, i32 320, !dbg !49
+  %217 = and i32 %13, 64, !dbg !49
+  %218 = lshr exact i32 %217, 5, !dbg !49
+  %219 = and i32 %13, 128, !dbg !49
+  %220 = xor i32 %216, %215, !dbg !49
+  %221 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %218, !dbg !49
+  %222 = getelementptr inbounds nuw i8, ptr addrspace(3) %221, i32 %220, !dbg !49
+  %223 = getelementptr inbounds nuw i8, ptr addrspace(3) %222, i32 %219, !dbg !49
+  %224 = zext <2 x i1> %208 to <2 x i8>, !dbg !49
+  store <2 x i8> %224, ptr addrspace(3) %223, align 2, !dbg !49
+  tail call void @llvm.nvvm.barrier.cta.sync.aligned.all(i32 0), !dbg !49
+  %225 = shl nuw nsw i32 %13, 2, !dbg !49
+  %226 = and i32 %225, 124, !dbg !49
+  %227 = lshr i32 %13, 4, !dbg !49
+  %228 = and i32 %227, 2, !dbg !49
+  %229 = shl nuw nsw i32 %217, 1, !dbg !49
+  %.lobit2 = lshr exact i32 %219, 7, !dbg !49
+  %230 = or disjoint i32 %228, %229, !dbg !49
+  %231 = or disjoint i32 %230, %.lobit2, !dbg !49
+  %232 = or disjoint i32 %231, %226, !dbg !49
+  %233 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %232, !dbg !49
+  %234 = load i8, ptr addrspace(3) %233, align 1, !dbg !49
+  %235 = xor i32 %232, 320, !dbg !49
+  %236 = getelementptr inbounds nuw i8, ptr addrspace(3) @global_smem, i32 %235, !dbg !49
+  %237 = load i8, ptr addrspace(3) %236, align 1, !dbg !49
+  %238 = insertelement <2 x i8> poison, i8 %234, i64 0, !dbg !49
+  %239 = insertelement <2 x i8> %238, i8 %237, i64 1, !dbg !49
+  %240 = bitcast <2 x i8> %239 to i16, !dbg !49
+  tail call void asm sideeffect "st.global.b16 [ $1 + 0 ], { $0 };", "c,l"(i16 %240, ptr addrspace(1) %188) #3, !dbg !49
+  %241 = getelementptr bfloat, ptr addrspace(1) %5, i64 %21, !dbg !50
+  %242 = fpext <2 x bfloat> %24 to <2 x float>, !dbg !51
+  %243 = fpext <2 x bfloat> %27 to <2 x float>, !dbg !52
+  %244 = fpext <2 x bfloat> %32 to <2 x float>, !dbg !53
+  %245 = fadd <2 x float> %243, %244, !dbg !54
+  %246 = insertelement <2 x float> poison, float %213, i64 0, !dbg !55
+  %247 = insertelement <2 x float> %246, float %214, i64 1, !dbg !55
+  %248 = fmul <2 x float> %245, %247, !dbg !55
+  %249 = fmul <2 x float> %248, splat (float 0x3FF1C71C80000000), !dbg !56
+  %250 = fadd <2 x float> %249, %242, !dbg !57
+  %251 = fptrunc <2 x float> %250 to <2 x bfloat>, !dbg !58
+  %252 = bitcast <2 x bfloat> %251 to i32, !dbg !58
+  tail call void asm sideeffect "st.global.b32 [ $1 + 0 ], { $0 };", "r,l"(i32 %252, ptr addrspace(1) %241) #3, !dbg !58
+  ret void, !dbg !59
+}
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef range(i32 0, 2147483647) i32 @llvm.nvvm.read.ptx.sreg.ctaid.x() #1
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare noundef range(i32 0, 1024) i32 @llvm.nvvm.read.ptx.sreg.tid.x() #1
+
+; Function Attrs: convergent nocallback nounwind
+declare void @llvm.nvvm.barrier.cta.sync.aligned.all(i32) #2
+
+; Function Attrs: mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i32 @llvm.nvvm.mulhi.ui(i32, i32) #1
+
+attributes #0 = { nounwind "nvvm.reqntid"="256" }
+attributes #1 = { mustprogress nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { convergent nocallback nounwind }
+attributes #3 = { nounwind }
+
+!llvm.dbg.cu = !{!0}
+!llvm.module.flags = !{!2, !3}
+!llvm.ident = !{!4}
+
+!0 = distinct !DICompileUnit(language: DW_LANG_C, file: !1, producer: "triton", isOptimized: true, runtimeVersion: 0, emissionKind: LineTablesOnly)
+!1 = !DIFile(filename: "cpbmjicvwt7aqis6sa7nybzkz2dgu5ulimp3q7l6mkq2jjpu7tww.py", directory: "/iopsstor/scratch/cscs/course_00313/gipfelsturm/.inductor_cache/pb")
+!2 = !{i32 2, !"Debug Info Version", i32 3}
+!3 = !{i32 4, !"nvvm-reflect-ftz", i32 1}
+!4 = !{!"clang version 3.8.0 (tags/RELEASE_380/final)"}
+!5 = distinct !DISubprogram(name: "triton_poi_fused_add_native_dropout_0", linkageName: "triton_poi_fused_add_native_dropout_0", scope: !1, file: !1, line: 18, type: !6, scopeLine: 18, spFlags: DISPFlagDefinition | DISPFlagOptimized, unit: !0)
+!6 = !DISubroutineType(cc: DW_CC_normal, types: !7)
+!7 = !{}
+!8 = !DILocation(line: 20, column: 28, scope: !5)
+!9 = !DILocation(line: 20, column: 33, scope: !5)
+!10 = !DILocation(line: 21, column: 36, scope: !5)
+!11 = !DILocation(line: 21, column: 23, scope: !5)
+!12 = !DILocation(line: 25, column: 19, scope: !5)
+!13 = !DILocation(line: 24, column: 19, scope: !5)
+!14 = !DILocation(line: 26, column: 30, scope: !5)
+!15 = !DILocation(line: 26, column: 35, scope: !5)
+!16 = !DILocation(line: 27, column: 30, scope: !5)
+!17 = !DILocation(line: 27, column: 35, scope: !5)
+!18 = !DILocation(line: 28, column: 30, scope: !5)
+!19 = !DILocation(line: 28, column: 35, scope: !5)
+!20 = !DILocation(line: 29, column: 29, scope: !5)
+!21 = !DILocation(line: 29, column: 19, scope: !5)
+!22 = !DILocation(line: 57, column: 28, scope: !23, inlinedAt: !25)
+!23 = distinct !DILexicalBlockFile(scope: !5, file: !24, discriminator: 0)
+!24 = !DIFile(filename: "random.py", directory: "/usr/local/lib/python3.12/dist-packages/triton/language")
+!25 = !DILocation(line: 110, column: 54, scope: !23, inlinedAt: !26)
+!26 = !DILocation(line: 84, column: 43, scope: !23, inlinedAt: !27)
+!27 = !DILocation(line: 155, column: 35, scope: !23, inlinedAt: !28)
+!28 = !DILocation(line: 31, column: 25, scope: !29)
+!29 = distinct !DILexicalBlockFile(scope: !5, file: !1, discriminator: 0)
+!30 = !DILocation(line: 57, column: 49, scope: !23, inlinedAt: !25)
+!31 = !DILocation(line: 58, column: 41, scope: !23, inlinedAt: !25)
+!32 = !DILocation(line: 35, column: 28, scope: !23, inlinedAt: !33)
+!33 = !DILocation(line: 69, column: 57, scope: !23, inlinedAt: !25)
+!34 = !DILocation(line: 35, column: 40, scope: !23, inlinedAt: !33)
+!35 = !DILocation(line: 36, column: 28, scope: !23, inlinedAt: !33)
+!36 = !DILocation(line: 36, column: 40, scope: !23, inlinedAt: !33)
+!37 = !DILocation(line: 38, column: 23, scope: !23, inlinedAt: !33)
+!38 = !DILocation(line: 40, column: 24, scope: !23, inlinedAt: !33)
+!39 = !DILocation(line: 41, column: 24, scope: !23, inlinedAt: !33)
+!40 = !DILocation(line: 37, column: 23, scope: !23, inlinedAt: !33)
+!41 = !DILocation(line: 35, column: 19, scope: !5)
+!42 = !DILocation(line: 41, column: 35, scope: !5)
+!43 = !DILocation(line: 41, column: 30, scope: !5)
+!44 = !DILocation(line: 41, column: 25, scope: !5)
+!45 = !DILocation(line: 142, column: 32, scope: !23, inlinedAt: !46)
+!46 = !DILocation(line: 156, column: 33, scope: !23, inlinedAt: !28)
+!47 = !DILocation(line: 143, column: 15, scope: !23, inlinedAt: !46)
+!48 = !DILocation(line: 34, column: 18, scope: !5)
+!49 = !DILocation(line: 41, column: 46, scope: !5)
+!50 = !DILocation(line: 42, column: 25, scope: !5)
+!51 = !DILocation(line: 26, column: 44, scope: !5)
+!52 = !DILocation(line: 27, column: 44, scope: !5)
+!53 = !DILocation(line: 28, column: 74, scope: !5)
+!54 = !DILocation(line: 36, column: 19, scope: !5)
+!55 = !DILocation(line: 37, column: 19, scope: !5)
+!56 = !DILocation(line: 39, column: 20, scope: !5)
+!57 = !DILocation(line: 40, column: 19, scope: !5)
+!58 = !DILocation(line: 42, column: 37, scope: !5)
+!59 = !DILocation(line: 42, column: 4, scope: !5)

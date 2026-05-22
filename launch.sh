@@ -67,9 +67,7 @@ case $MODE in
     train|batchsize)
         TRAINING_STEPS=${_POSITIONAL[0]:?Usage: ./launch.sh train <model_size> <steps> [nodes]}
         NODES=${_POSITIONAL[1]:-4}
-        # 1h per job slice: shorter jobs get higher SLURM priority.
-        # Jobs checkpoint every 100 steps and resume automatically on resubmit.
-        TIME=01:00:00
+        TIME=01:15:00
         EVAL_INTERVAL=50
         EVAL_ITERS=10
         LR_WARMUP_ITERS=100
@@ -77,11 +75,9 @@ case $MODE in
     --tensorboard-dir \$TENSORBOARD_DIR
     --log-timers-to-tensorboard
     --log-memory-to-tensorboard"
-        # Checkpoint every 50 steps so a failed job can resume from last save
-        CHECKPOINT_EXTRA="
-    --save \$CHECKPOINT_DIR
-    --save-interval 50
-    --load \$CHECKPOINT_DIR"
+        # Checkpointing disabled: known SIGSEGV bug on GH200/ARM64
+        # https://github.com/NVIDIA/Megatron-LM/issues/1861
+        CHECKPOINT_EXTRA=""
         WANDB=true
         [[ -z "$LR_SCHEDULE" ]] && LR_SCHEDULE="cosine"
         ;;

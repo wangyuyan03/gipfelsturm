@@ -149,12 +149,12 @@ run_lr_ablation() {
     echo ""
 
     # Cosine baseline
-    submit lr "760m-cosine-${steps}s" train 760m "$steps" 1 --lr-schedule cosine
+    submit lr "760m-cosine-${steps}s" train 760m "$steps" 1 --lr-schedule cosine --time 00:15:00
 
     # WSD variants — 20%, 30%, 40% of steps used for the decay phase
     for pct in 20 30 40; do
         submit lr "760m-wsd${pct}-${steps}s" \
-            train 760m "$steps" 1 --lr-schedule WSD --wsd-decay-pct "$pct"
+            train 760m "$steps" 1 --lr-schedule WSD --wsd-decay-pct "$pct" --time 00:15:00
     done
 
     echo ""

@@ -69,7 +69,7 @@ case $MODE in
     train|batchsize)
         TRAINING_STEPS=${_POSITIONAL[0]:?Usage: ./launch.sh train <model_size> <steps> [nodes]}
         NODES=${_POSITIONAL[1]:-4}
-        TIME=01:15:00
+        TIME=00:35:00
         EVAL_INTERVAL=50
         EVAL_ITERS=10
         LR_WARMUP_ITERS=100

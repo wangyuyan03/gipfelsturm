@@ -6,7 +6,7 @@
 # Usage:
 #   ./run_experiments.sh throughput          — model size + batch size sweep
 #   ./run_experiments.sh lr <steps>          — LR schedule ablation (cosine vs WSD)
-#   ./run_experiments.sh final <steps> <schedule> [wsd_pct]  — final 30-min run
+#   ./run_experiments.sh final <steps> <schedule> [wsd_pct] [model]  — final 30-min run
 #   ./run_experiments.sh status              — show all submitted jobs
 #
 # Examples:
@@ -154,7 +154,7 @@ run_lr_ablation() {
     # WSD variants — 20%, 30%, 40% of steps used for the decay phase
     for pct in 20 30 40; do
         submit lr "760m-wsd${pct}-${steps}s" \
-            train 760m "$steps" 1 --lr-schedule WSD --wsd-decay-pct "$pct" --time 00:15:00
+            train 760m "$steps" 1 --lr-schedule WSD --wsd-decay-pct "$pct"
     done
 
     echo ""
@@ -170,23 +170,24 @@ run_lr_ablation() {
 # Run AFTER LR ablation results are in.
 # ─────────────────────────────────────────────────────────────────────────────
 run_final() {
-    local steps=${1:?Usage: ./run_experiments.sh final <steps> <cosine|WSD> [wsd_pct]}
-    local schedule=${2:?Usage: ./run_experiments.sh final <steps> <cosine|WSD> [wsd_pct]}
+    local steps=${1:?Usage: ./run_experiments.sh final <steps> <cosine|WSD> [wsd_pct] [model]}
+    local schedule=${2:?Usage: ./run_experiments.sh final <steps> <cosine|WSD> [wsd_pct] [model]}
     local wsd_pct=${3:-30}
+    local model=${4:-760m}
 
     echo ""
     echo "═══════════════════════════════════════════════════════"
     echo " Submitting FINAL 30-min run"
-    echo " Steps: $steps | Schedule: $schedule | Model: 760m | Nodes: 1"
+    echo " Steps: $steps | Schedule: $schedule | Model: $model | Nodes: 4"
     echo "═══════════════════════════════════════════════════════"
     echo ""
 
     if [[ "$schedule" == "WSD" ]]; then
-        submit final "FINAL-760m-${schedule}${wsd_pct}-${steps}s" \
-            train 760m "$steps" 1 --lr-schedule WSD --wsd-decay-pct "$wsd_pct"
+        submit final "FINAL-${model}-${schedule}${wsd_pct}-${steps}s" \
+            train "$model" "$steps" 4 --lr-schedule WSD --wsd-decay-pct "$wsd_pct"
     else
-        submit final "FINAL-760m-${schedule}-${steps}s" \
-            train 760m "$steps" 1 --lr-schedule "$schedule"
+        submit final "FINAL-${model}-${schedule}-${steps}s" \
+            train "$model" "$steps" 4 --lr-schedule "$schedule"
     fi
 
     echo ""
